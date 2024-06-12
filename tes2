@@ -1,0 +1,37 @@
+import tkinter as tk
+
+# Membuat window utama
+root = tk.Tk()
+root.title("Frame Example")
+root.geometry("1200x1000")
+
+# Membuat frame atas
+top_frame = tk.Frame(root, bg='lightblue', width=600, height=100)
+top_frame.pack(side=tk.TOP, fill=tk.X)
+
+# Membuat frame kiri
+left_frame = tk.Frame(root, bg='lightgreen', width=200, height=300)
+left_frame.pack(side=tk.LEFT, fill=tk.Y)
+
+# Membuat frame kanan
+right_frame = tk.Frame(root, bg='lightyellow', width=400, height=300)
+right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+# Menambahkan label ke frame atas
+label_top = tk.Label(top_frame, text="Top Frame", bg='lightblue')
+label_top.pack(padx=10, pady=10)
+
+# Menambahkan label ke frame kiri
+label_left = tk.Label(left_frame, text="Left Frame", bg='lightgreen')
+label_left.pack(padx=10, pady=10)
+
+# Menambahkan label ke frame kanan
+label_right = tk.Label(right_frame, text="Right Frame", bg='lightyellow')
+label_right.pack(padx=10, pady=10)
+
+# Menambahkan tombol ke frame kanan
+button_right = tk.Button(right_frame, text="Button in Right Frame")
+button_right.pack(pady=20)
+
+# Memulai loop utama Tkinter
+root.mainloop()

@@ -1,0 +1,93 @@
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image, ImageTk, ImageOps
+
+def load_image():
+    global image, image_tk, canvas_img_id
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        image = Image.open(file_path)
+        image_tk = ImageTk.PhotoImage(image)
+        if canvas_img_id is not None:
+            canvas.delete(canvas_img_id)
+        canvas_img_id = canvas.create_image(0, 0, anchor=tk.NW, image=image_tk)
+        canvas.config(scrollregion=canvas.bbox(tk.ALL))  # Mengatur daerah scroll
+
+def on_button_press(event):
+    global start_x, start_y, rect
+    start_x = canvas.canvasx(event.x)
+    start_y = canvas.canvasy(event.y)
+    if rect is not None:
+        canvas.delete(rect)
+    rect = canvas.create_rectangle(start_x, start_y, start_x, start_y, outline='red')
+
+def on_mouse_drag(event):
+    cur_x = canvas.canvasx(event.x)
+    cur_y = canvas.canvasy(event.y)
+    canvas.coords(rect, start_x, start_y, cur_x, cur_y)
+
+def on_button_release(event):
+    global image, cropped_image, image_tk, rect, start_x, start_y, canvas_img_id
+    end_x = canvas.canvasx(event.x)
+    end_y = canvas.canvasy(event.y)
+    if image:
+        # Memotong bagian gambar yang dipilih
+        cropped_image = image.crop((start_x, start_y, end_x, end_y))
+        # Mengubah ukuran gambar yang dipotong agar sesuai dengan ukuran kanvas
+        canvas_width = canvas.winfo_width()
+        canvas_height = canvas.winfo_height()
+        resized_image = ImageOps.fit(cropped_image, (canvas_width, canvas_height), method=Image.Resampling.LANCZOS)
+        # Menampilkan hasil potongan gambar di kanvas
+        image_tk = ImageTk.PhotoImage(resized_image)
+        if canvas_img_id is not None:
+            canvas.delete(canvas_img_id)
+        canvas_img_id = canvas.create_image(0, 0, anchor=tk.NW, image=image_tk)
+        canvas.config(scrollregion=canvas.bbox(tk.ALL))  # Mengatur daerah scroll
+        # Menghapus persegi panjang seleksi
+        canvas.delete(rect)
+        rect = None
+
+def save_cropped_image():
+    global cropped_image
+    if cropped_image:
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")])
+        if file_path:
+            cropped_image.save(file_path)
+
+# Inisialisasi variabel global
+image = None
+cropped_image = None
+image_tk = None
+canvas_img_id = None
+start_x = None
+start_y = None
+rect = None
+
+# Membuat root window
+root = tk.Tk()
+root.title("Image Cropper")
+root.geometry("800x600")
+
+# Membuat frame utama
+main_frame = tk.Frame(root)
+main_frame.pack(fill=tk.BOTH, expand=True)
+
+# Membuat canvas untuk menampilkan gambar
+canvas = tk.Canvas(main_frame, cursor="cross", bg="gray")
+canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+# Membuat tombol untuk memuat gambar
+load_button = tk.Button(root, text="Load Image", command=load_image)
+load_button.pack(pady=5)
+
+# Membuat tombol untuk menyimpan gambar yang dipotong
+save_button = tk.Button(root, text="Save Cropped Image", command=save_cropped_image)
+save_button.pack(pady=5)
+
+# Menghubungkan event dengan fungsi
+canvas.bind("<ButtonPress-1>", on_button_press)
+canvas.bind("<B1-Motion>", on_mouse_drag)
+canvas.bind("<ButtonRelease-1>", on_button_release)
+
+# Memulai loop utama Tkinter
+root.mainloop()
