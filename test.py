@@ -181,6 +181,7 @@ contrastSlider.set(1)
 #setting the font style, font size, weight
 contrastSlider.configure(font=('poppins',11,'bold'),foreground='white')
 contrastSlider.place(x=1070,y=90)
+
 sharpnessSlider = Scale(mains, label="Sharpness", from_=0, to=2, orient=HORIZONTAL, length=200,
 						command=sharpen_callback, resolution=0.1, bg="#1f242d")
 #initially, color position set to 1

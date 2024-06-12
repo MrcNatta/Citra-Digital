@@ -80,6 +80,10 @@ class main:
 
 root = Tk()
 root.title('Software Editing')
-main(root)
+
+frame_t = Frame(root, bg='grey', width=400, height=60)
+frame_t.pack(side=TOP, fill=X)
+
+Button(main(root))
       
 root.mainloop()

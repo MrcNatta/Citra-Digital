@@ -1,93 +1,142 @@
-import tkinter as tk
+from tkinter import *
+from tkinter import ttk
 from tkinter import filedialog
-from PIL import Image, ImageTk, ImageOps
+from PIL import ImageTk, Image, ImageEnhance, ImageFilter
+import os
 
-def load_image():
-    global image, image_tk, canvas_img_id
-    file_path = filedialog.askopenfilename()
-    if file_path:
-        image = Image.open(file_path)
-        image_tk = ImageTk.PhotoImage(image)
-        if canvas_img_id is not None:
-            canvas.delete(canvas_img_id)
-        canvas_img_id = canvas.create_image(0, 0, anchor=tk.NW, image=image_tk)
-        canvas.config(scrollregion=canvas.bbox(tk.ALL))  # Mengatur daerah scroll
+# fungsi mengganti gambar
+def LoadImg():
+    global img, ori_img
+    imgname = filedialog.askopenfilename(title="Load Image")
+    if imgname:
+        img = Image.open(imgname)
+        ori_img = img.copy()  # Simpan gambar asli
+        img = img.resize((800, 700))
+        displayimage(img)
 
-def on_button_press(event):
-    global start_x, start_y, rect
-    start_x = canvas.canvasx(event.x)
-    start_y = canvas.canvasy(event.y)
-    if rect is not None:
-        canvas.delete(rect)
-    rect = canvas.create_rectangle(start_x, start_y, start_x, start_y, outline='red')
+# buat display image
+def displayimage(img):
+    dispimage = ImageTk.PhotoImage(img)
+    panel.configure(image=dispimage)
+    panel.image = dispimage
 
-def on_mouse_drag(event):
-    cur_x = canvas.canvasx(event.x)
-    cur_y = canvas.canvasy(event.y)
-    canvas.coords(rect, start_x, start_y, cur_x, cur_y)
+# fungsi rotasi
+def rotate_image(direction):
+    global img
+    if img is not None:
+        if direction == 'Rotate Left':
+            img = img.rotate(90, expand=True)
+        elif direction == 'Rotate Right':
+            img = img.rotate(-90, expand=True)
+        elif direction == 'Rotate 90':
+            img = img.rotate(90, expand=True)
+        elif direction == 'Rotate 180':
+            img = img.rotate(180, expand=True)
+        displayimage(img)
 
-def on_button_release(event):
-    global image, cropped_image, image_tk, rect, start_x, start_y, canvas_img_id
-    end_x = canvas.canvasx(event.x)
-    end_y = canvas.canvasy(event.y)
-    if image:
-        # Memotong bagian gambar yang dipilih
-        cropped_image = image.crop((start_x, start_y, end_x, end_y))
-        # Mengubah ukuran gambar yang dipotong agar sesuai dengan ukuran kanvas
-        canvas_width = canvas.winfo_width()
-        canvas_height = canvas.winfo_height()
-        resized_image = ImageOps.fit(cropped_image, (canvas_width, canvas_height), method=Image.Resampling.LANCZOS)
-        # Menampilkan hasil potongan gambar di kanvas
-        image_tk = ImageTk.PhotoImage(resized_image)
-        if canvas_img_id is not None:
-            canvas.delete(canvas_img_id)
-        canvas_img_id = canvas.create_image(0, 0, anchor=tk.NW, image=image_tk)
-        canvas.config(scrollregion=canvas.bbox(tk.ALL))  # Mengatur daerah scroll
-        # Menghapus persegi panjang seleksi
-        canvas.delete(rect)
-        rect = None
+# fungsi mirror
+def mirror():
+    global img
+    img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    displayimage(img)
 
-def save_cropped_image():
-    global cropped_image
-    if cropped_image:
-        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")])
-        if file_path:
-            cropped_image.save(file_path)
+# fungsi brightness
+def brightness_callback(brightness_pos):
+    brightness_pos = float(brightness_pos)
+    global outputImage
+    enhancer = ImageEnhance.Brightness(img)
+    outputImage = enhancer.enhance(brightness_pos)
+    displayimage(outputImage)
 
-# Inisialisasi variabel global
-image = None
-cropped_image = None
-image_tk = None
-canvas_img_id = None
-start_x = None
-start_y = None
-rect = None
+# fungsi contrast
+def contrast_callback(contrast_pos):
+    contrast_pos = float(contrast_pos)
+    global outputImage
+    enhancer = ImageEnhance.Contrast(img)
+    outputImage = enhancer.enhance(contrast_pos)
+    displayimage(outputImage)
 
-# Membuat root window
-root = tk.Tk()
-root.title("Image Cropper")
-root.geometry("800x600")
+# fungsi reset image
+def reset_image():
+    global img, ori_img
+    img = ori_img.copy()  # Kembalikan gambar ke keadaan asli
+    displayimage(img)
 
-# Membuat frame utama
-main_frame = tk.Frame(root)
-main_frame.pack(fill=tk.BOTH, expand=True)
+# MAIN LOOP
+root = Tk()
+root.title("Image Editor")
 
-# Membuat canvas untuk menampilkan gambar
-canvas = tk.Canvas(main_frame, cursor="cross", bg="gray")
-canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+space = (" ") * 215
 
-# Membuat tombol untuk memuat gambar
-load_button = tk.Button(root, text="Load Image", command=load_image)
-load_button.pack(pady=5)
+# It retrieves the screen width of the user's display
+screen_width = root.winfo_screenwidth()
 
-# Membuat tombol untuk menyimpan gambar yang dipotong
-save_button = tk.Button(root, text="Save Cropped Image", command=save_cropped_image)
-save_button.pack(pady=5)
+# It retrieves the screen height of the user's display
+screen_height = root.winfo_screenheight()
 
-# Menghubungkan event dengan fungsi
-canvas.bind("<ButtonPress-1>", on_button_press)
-canvas.bind("<B1-Motion>", on_mouse_drag)
-canvas.bind("<ButtonRelease-1>", on_button_release)
+# Using an f-string to construct the window size in the
+# format width x height
+root.geometry(f"{screen_width}x{screen_height}")
 
-# Memulai loop utama Tkinter
+# frame atas (tempat slider brightness & contrass, load & save img)
+frame_t = Frame(root, bg='grey', width=400, height=60)
+frame_t.pack(side=TOP, fill=X)
+
+# frame atas (tempat button)
+frame_l = Frame(root, bg='white', width=350, height=300)
+frame_l.pack(side=LEFT, fill=Y)
+
+# canvas yang menampilkan gambar
+frame_r = Frame(root, bg='lightgrey', width=400, height=400)
+frame_r.pack(side=RIGHT, fill=BOTH, expand=True)
+
+canvas = Canvas(frame_r, cursor="cross", bg="gray")
+canvas.pack(fill=BOTH, expand=True, padx=10, pady=10)
+
+# gambar awal
+img = Image.open("logo.png")
+img = img.resize((700, 700))
+ori_img = img.copy()  # Simpan gambar asli
+panel = Label(canvas)
+panel.grid(row=0, column=0, rowspan=12, padx=300, pady=20)
+displayimage(img)
+
+# load image button
+btnLoadImg = Button(frame_t, text='Load Image', width=15, command=LoadImg, bg="#939393", activebackground="LIGHTBLUE")
+btnLoadImg.configure(font=('poppins', 11, 'bold'), foreground='white')
+btnLoadImg.place(x=10, y=15)
+
+# slider untuk brightness
+brightnessSlider = Scale(frame_t, label="Brightness", from_=0, to=2, orient=HORIZONTAL, length=200,
+                         resolution=0.1, command=brightness_callback, bg="#616E7C")
+# initially, color position set to 1
+brightnessSlider.set(1)
+brightnessSlider.configure(font=('poppins', 11), foreground='white')
+brightnessSlider.place(x=1300, y=1)
+
+# slider untuk contrast
+brightnessSlider = Scale(frame_t, label="Contrast", from_=0, to=2, orient=HORIZONTAL, length=200,
+                         resolution=0.1, command=contrast_callback, bg="#616E7C")
+# initially, color position set to 1
+brightnessSlider.set(1)
+brightnessSlider.configure(font=('poppins', 11), foreground='white')
+brightnessSlider.place(x=1070, y=1)
+
+# button reset image
+btnResetImg = Button(frame_t, text='Reset Image', width=10, command=reset_image)
+btnResetImg.configure(font=('poppins', 11))
+btnResetImg.pack(padx=10, pady=10)
+
+# dropdown rotasi
+rotation_options = ["Rotate Left", "Rotate Right", "Rotate 90", "Rotate 180"]
+selected_rotation = StringVar(frame_l)
+selected_rotation.set('Rotation')  # default value
+rotation_menu = OptionMenu(frame_l, selected_rotation, *rotation_options, command=rotate_image)
+rotation_menu.configure(font=('poppins', 11))
+rotation_menu.pack(padx=10, pady=10)
+
+# button mirror
+btnmirror = Button(frame_l, text='Mirror', width=10, command=mirror)
+btnmirror.configure(font=('poppins', 11))
+btnmirror.pack(padx=10, pady=10)
 root.mainloop()
