@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import  ttk
 from tkinter import filedialog
 from tkinter.colorchooser import askcolor
+import numpy as np
 from PIL import ImageTk, Image, ImageEnhance, ImageFilter
 import os
 
@@ -42,7 +43,8 @@ def contrast_callback(contrast_pos):
 def scale_image(scaling_pos):
     scaling_pos = float(scaling_pos)
     global img, ori_img
-    img = ori_img.resize((int(ori_img.width * scaling_pos), int(ori_img.height * scaling_pos)))
+    img = ori_img.resize((int(ori_img.width * scaling_pos), 
+    int(ori_img.height * scaling_pos)))
     displayimage(img)
 
 # fungsi rotasi
@@ -66,8 +68,25 @@ def mirror():
     displayimage(img)
 
 #fungsi translasi
-def translasi():
-    global img
+def translate_image(F, gy, gx):
+    tinggi, lebar = F.shape[:2]
+    G = np.zeros_like(F)
+    
+    for y in range(tinggi):
+        for x in range(lebar):
+            if (y + gy >= 0) and (y + gy < tinggi) and (x + gx >= 0) and (x + gx < lebar):
+                G[y + gy, x + gx] = F[y, x]
+    
+    return G
+
+def translate_callback():
+    global img, ori_img
+    gy = int(gy_entry.get())
+    gx = int(gx_entry.get())
+    img_array = np.array(img)
+    translated_img_array = translate_image(img_array, gy, gx)
+    translated_img = Image.fromarray(translated_img_array)
+    displayimage(translated_img)
 
 #fungsi crop
 def crop():
@@ -84,7 +103,8 @@ def save():
     global img
     if img:
         filename = filedialog.asksaveasfilename(defaultextension=".png", 
-        filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("All files", "*.*")])
+        filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), 
+        ("All files", "*.*")])
         if filename:
             img.save(filename)
 
@@ -264,9 +284,19 @@ btncrop = Button(frame_l, text='Crop', width=10, command=crop)
 btncrop.configure(font=('poppins', 11))
 btncrop.pack(padx=10, pady=10)
 
-#button crop
-btntrans = Button(frame_l, text='Translasi', width=10, command=crop)
-btntrans.configure(font=('poppins', 11))
-btntrans.pack(padx=10, pady=10)
+# Add input fields for gy and gx
+gy_label = Label(frame_l, text="Vertical Shift (gy):")
+gy_label.pack(padx=10, pady=5)
+gy_entry = Entry(frame_l)
+gy_entry.pack(padx=10, pady=5)
+
+gx_label = Label(frame_l, text="Horizontal Shift (gx):")
+gx_label.pack(padx=10, pady=5)
+gx_entry = Entry(frame_l)
+gx_entry.pack(padx=10, pady=5)
+
+# button translasi
+btnTranslateImg = Button(frame_l, text='Translate Image', width=15, command=translate_callback)
+btnTranslateImg.pack(padx=10, pady=10)
 
 root.mainloop()
