@@ -65,6 +65,15 @@ def mirror():
     img = img.transpose(Image.FLIP_LEFT_RIGHT)
     displayimage(img)
 
+#fungsi translasi
+def translasi():
+    global img
+
+
+# fungsi crop
+def crop():
+    global img
+
 # fungsi reset image
 def reset_image():
     global img, ori_img
@@ -75,10 +84,14 @@ def reset_image():
 def save():
     global img
     if img:
-        filename = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("All files", "*.*")])
+        filename = filedialog.asksaveasfilename(defaultextension=".png", 
+        filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("All files", "*.*")])
         if filename:
             img.save(filename)
 
+
+
+# kelas untuk fitur paint
 class Paint(object):
     DEFAULT_PEN_SIZE = 5.0
     DEFAULT_COLOR = 'black'
@@ -148,7 +161,6 @@ class Paint(object):
     def reset(self, event):
         self.old_x, self.old_y = None, None
 
-
 def open_paint_app():
     paint_window = Toplevel(root)
     Paint(paint_window)
@@ -157,7 +169,7 @@ if __name__ == '__main__':
 
 # MAIN LOOP 
     root = Tk()
-root.title("Image Editor")
+    root.title("Image Editor")
 
 space=(" ")*215
 # It retrieves the screen width of the user's display
@@ -245,11 +257,9 @@ btnmirror = Button(frame_l, text='Mirror', width=10, command=mirror)
 btnmirror.configure(font=('poppins', 11))
 btnmirror.pack(padx=10, pady=10)
 
-#fitur paint
+#button untuk pop up fitur paint
 open_paint_button = Button(frame_l, text="Paint", width=10, command=open_paint_app)
 open_paint_button.configure(font=('poppins', 11))
 open_paint_button.pack(pady=20)
-
-ori_img = None
 
 root.mainloop()
