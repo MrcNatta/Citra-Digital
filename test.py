@@ -6,42 +6,8 @@ import numpy as np
 from PIL import ImageTk, Image, ImageEnhance, ImageFilter
 import os
 
-current_brightness = 1.0
-current_contrast = 1.0
-current_scale = 1.0
-
+        
 #fungsi mengganti gambar
-
-def update_image_dimensions(img):
-    width, height = img.size
-    img_dimensions_label.config(text=f"Dimensions: {width} x {height}")
-
-
-def apply_enhancements():
-    global img, ori_img, cropped_img, current_brightness, current_contrast, current_scale
-
-    if cropped_img:
-        outputImage = cropped_img.copy()
-    else:
-        outputImage = img.copy()
-
-    # Apply scaling
-    width = int(ori_img.width * current_scale)
-    height = int(ori_img.height * current_scale)
-    outputImage = outputImage.resize((width, height))
-
-    # Apply brightness enhancement
-    enhancer = ImageEnhance.Brightness(outputImage)
-    outputImage = enhancer.enhance(current_brightness)
-
-    # Apply contrast enhancement
-    enhancer = ImageEnhance.Contrast(outputImage)
-    outputImage = enhancer.enhance(current_contrast)
-
-    displayimage(outputImage)
-
-
-
 def LoadImg():
     global img, ori_img
     imgname = filedialog.askopenfilename(title="Load Image")
@@ -50,8 +16,6 @@ def LoadImg():
         img = img.resize((800, 700))
         ori_img = img.copy()  # Simpan gambar asli
         displayimage(img)
-        update_image_dimensions(img)
-        
 
 #buat display image
 def displayimage(img):
@@ -61,21 +25,27 @@ def displayimage(img):
 
 #fungsi brightness
 def brightness_callback(brightness_pos):
-    global current_brightness
-    current_brightness = float(brightness_pos)
-    apply_enhancements()
+	brightness_pos = float(brightness_pos)
+	global outputImage
+	enhancer = ImageEnhance.Brightness(img)
+	outputImage = enhancer.enhance(brightness_pos)
+	displayimage(outputImage)
      
 #fungsi contrast
 def contrast_callback(contrast_pos):
-    global current_contrast
-    current_contrast = float(contrast_pos)
-    apply_enhancements()
+	contrast_pos = float(contrast_pos)
+	global outputImage
+	enhancer = ImageEnhance.Contrast(img)
+	outputImage = enhancer.enhance(contrast_pos)
+	displayimage(outputImage)
 
 # fungsi scaling image
 def scale_image(scaling_pos):
-    global current_scale
-    current_scale = float(scaling_pos)
-    apply_enhancements()
+    scaling_pos = float(scaling_pos)
+    global img, ori_img
+    img = ori_img.resize((int(ori_img.width * scaling_pos), 
+    int(ori_img.height * scaling_pos)))
+    displayimage(img)
 
 # fungsi rotasi
 def rotate_image(direction):
@@ -119,27 +89,23 @@ def translate_callback():
     translated_img = Image.fromarray(translated_img_array)
     displayimage(translated_img)
 
+#fungsi crop
+def crop():
+    global img
+
 # fungsi reset image
 def reset_image():
-    global img, ori_img, current_brightness, current_contrast, current_scale, cropped_img
-    img = ori_img.copy()  # Reset image to the original
-    current_brightness = 1.0
-    current_contrast = 1.0
-    current_scale = 1.0
-    brightnessSlider.set(current_brightness)  # Reset slider to default value
-    contrastSlider.set(current_contrast)  # Reset slider to default value
-    scalingSlider.set(current_scale)  # Reset slider to default value
-    cropped_img = None  # Clear cropped image
+    global img, ori_img
+    img = ori_img.copy()  # Kembalikan gambar ke keadaan asli
     displayimage(img)
-    update_image_dimensions(img)
 
 # fungsi menyimpan gambar
 def save():
     global img
     if img:
         filename = filedialog.asksaveasfilename(defaultextension=".png", 
-        filetypes=[("PNG files", ".png"), ("JPEG files", ".jpg"), 
-        ("All files", ".")])
+        filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), 
+        ("All files", "*.*")])
         if filename:
             img.save(filename)
 
@@ -238,37 +204,6 @@ root.geometry(f"{screen_width}x{screen_height}")
 frame_t = Frame(root, bg='grey', width=400, height=60)
 frame_t.pack(side=TOP, fill=X)
 
-def crop_image():
-    global img, cropped_img, ori_img
-
-    # Get user-entered coordinates
-    x1 = int(x1_entry.get())
-    y1 = int(y1_entry.get())
-    x2 = int(x2_entry.get())
-    y2 = int(y2_entry.get())
-
-    # Ensure coordinates are within the image boundaries
-    if (x1 >= 0 and y1 >= 0 and x2 > x1 and y2 > y1 and 
-        x2 <= ori_img.width and y2 <= ori_img.height):
-        
-        # Crop the image from the original image
-        cropped_img = ori_img.crop((x1, y1, x2, y2))
-        
-        # Update the displayed image
-        displayimage(cropped_img)
-        update_image_dimensions(cropped_img)
-    else:
-        print("Invalid crop coordinates. Please ensure they are within image boundaries.")
-
-
-
-# Function to clear crop entry fields after successful crop
-def clear_crop_entries():
-  x1_entry.delete(0, END)
-  y1_entry.delete(0, END)
-  x2_entry.delete(0, END)
-  y2_entry.delete(0, END)
-
 #frame atas (tempat button)
 frame_l = Frame(root, bg='white', width=350, height=300)
 frame_l.pack(side=LEFT, fill=Y)
@@ -293,9 +228,6 @@ btnLoadImg = Button(frame_t, text='Load Image', width=15, command=LoadImg, bg="#
 btnLoadImg.configure(font=('poppins',11,'bold'),foreground='white')
 btnLoadImg.place(x=10,y=15)
 
-img_dimensions_label = Label(frame_t, text="Dimensions: N/A", bg='grey', fg='white')
-img_dimensions_label.place(x=600, y=15)
-
 # button reset image
 btnResetImg = Button(frame_t, text='Reset Image', width=15, command=reset_image, bg="#939393",activebackground="LIGHTBLUE")
 btnResetImg.configure(font=('poppins', 11, 'bold'), foreground='white')
@@ -306,49 +238,28 @@ btnResetImg = Button(frame_t, text='Save', width=15, command=save, bg="#939393",
 btnResetImg.configure(font=('poppins', 11, 'bold'), foreground='white')
 btnResetImg.place(x=350, y=15)
 
-btncrop = Button(frame_l, text='Crop', width=10, command=crop_image)
-btncrop.pack(padx=10, pady=10)
-
-# Add labels and entry fields for crop coordinates
-x1_label = Label(frame_l, text="X1:")
-x1_label.pack(padx=10, pady=5)
-x1_entry = Entry(frame_l)
-x1_entry.pack(padx=10, pady=5)
-
-y1_label = Label(frame_l, text="Y1:")
-y1_label.pack(padx=10, pady=5)
-y1_entry = Entry(frame_l)
-y1_entry.pack(padx=10, pady=5)
-
-x2_label = Label(frame_l, text="X2:")
-x2_label.pack(padx=10, pady=5)
-x2_entry = Entry(frame_l)
-x2_entry.pack(padx=10, pady=5)
-
-y2_label = Label(frame_l, text="Y2:")
-y2_label.pack(padx=10, pady=5)
-y2_entry = Entry(frame_l)
-y2_entry.pack(padx=10, pady=5)
-
 #slider untuk brightness
 brightnessSlider = Scale(frame_t, label="Brightness", from_=0, to=2, orient=HORIZONTAL, length=200,
-                        resolution=0.1, command=brightness_callback, bg="#616E7C")
+						resolution=0.1, command=brightness_callback, bg="#616E7C")
+#initially, color position set to 1
 brightnessSlider.set(1)
-brightnessSlider.configure(foreground='white')
-brightnessSlider.place(x=1300, y=1)
+brightnessSlider.configure(font=('poppins',11),foreground='white')
+brightnessSlider.place(x=1300,y=1)
 
 #slider untuk contrast
-contrastSlider = Scale(frame_t, label="Contrast", from_=0, to=2, orient=HORIZONTAL, length=200,
-                      resolution=0.1, command=contrast_callback, bg="#616E7C")
-contrastSlider.set(1)
-contrastSlider.configure(foreground='white')
-contrastSlider.place(x=1070, y=1)
+brightnessSlider = Scale(frame_t, label="Contrast", from_=0, to=2, orient=HORIZONTAL, length=200,
+						resolution=0.1, command=contrast_callback, bg="#616E7C")
+#initially, color position set to 1
+brightnessSlider.set(1)
+brightnessSlider.configure(font=('poppins',11),foreground='white')
+brightnessSlider.place(x=1070,y=1)
 
 # slider untuk scaling image
 scalingSlider = Scale(frame_t, label="Scale", from_=0, to=2, orient=HORIZONTAL, length=200,
                       resolution=0.1, command=scale_image, bg="#616E7C")
-scalingSlider.set(current_scale)  # Set to current scaling value
-scalingSlider.configure(foreground='white')
+# initially, scaling position set to 1
+scalingSlider.set(1)
+scalingSlider.configure(font=('poppins', 11), foreground='white')
 scalingSlider.place(x=840, y=1)
 
 #dropdown rotasi
@@ -369,6 +280,10 @@ open_paint_button = Button(frame_l, text="Paint", width=10, command=open_paint_a
 open_paint_button.configure(font=('poppins', 11))
 open_paint_button.pack(pady=20)
 
+#button crop
+btncrop = Button(frame_l, text='Crop', width=10, command=crop)
+btncrop.configure(font=('poppins', 11))
+btncrop.pack(padx=10, pady=10)
 
 # Add input fields for gy and gx
 gy_label = Label(frame_l, text="Vertical Shift (gy):")
