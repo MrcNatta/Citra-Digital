@@ -3,6 +3,7 @@ from tkinter import  ttk
 from tkinter import filedialog
 from tkinter.colorchooser import askcolor
 import numpy as np
+import numpy as np
 from PIL import ImageTk, Image, ImageEnhance, ImageFilter
 import os
 
