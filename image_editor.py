@@ -69,8 +69,7 @@ def mirror():
 def translasi():
     global img
 
-
-# fungsi crop
+#fungsi crop
 def crop():
     global img
 
@@ -88,8 +87,6 @@ def save():
         filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("All files", "*.*")])
         if filename:
             img.save(filename)
-
-
 
 # kelas untuk fitur paint
 class Paint(object):
@@ -261,5 +258,15 @@ btnmirror.pack(padx=10, pady=10)
 open_paint_button = Button(frame_l, text="Paint", width=10, command=open_paint_app)
 open_paint_button.configure(font=('poppins', 11))
 open_paint_button.pack(pady=20)
+
+#button crop
+btncrop = Button(frame_l, text='Crop', width=10, command=crop)
+btncrop.configure(font=('poppins', 11))
+btncrop.pack(padx=10, pady=10)
+
+#button crop
+btntrans = Button(frame_l, text='Translasi', width=10, command=crop)
+btntrans.configure(font=('poppins', 11))
+btntrans.pack(padx=10, pady=10)
 
 root.mainloop()

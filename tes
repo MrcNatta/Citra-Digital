@@ -1,80 +1,88 @@
-from tkinter import *
-from tkinter import filedialog
-from PIL import Image, ImageTk
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, QDialog, QGridLayout, QSpinBox
+from PyQt5.QtGui import QPixmap
+from PIL import Image
 
-class CanvasData:
-    def __init__(self, main_window):
-        self.mainWindow = main_window
+class CropDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Crop Settings")
+        
+        layout = QGridLayout()
+
+        self.left_spinbox = QSpinBox(self)
+        self.left_spinbox.setValue(0)
+        layout.addWidget(QLabel("Left:"), 0, 0)
+        layout.addWidget(self.left_spinbox, 0, 1)
+
+        self.top_spinbox = QSpinBox(self)
+        self.top_spinbox.setValue(0)
+        layout.addWidget(QLabel("Top:"), 1, 0)
+        layout.addWidget(self.top_spinbox, 1, 1)
+
+        self.right_spinbox = QSpinBox(self)
+        layout.addWidget(QLabel("Right:"), 2, 0)
+        layout.addWidget(self.right_spinbox, 2, 1)
+
+        self.bottom_spinbox = QSpinBox(self)
+        layout.addWidget(QLabel("Bottom:"), 3, 0)
+        layout.addWidget(self.bottom_spinbox, 3, 1)
+
+        self.crop_button = QPushButton("Crop", self)
+        self.crop_button.clicked.connect(self.accept)
+        layout.addWidget(self.crop_button, 4, 0, 1, 2)
+
+        self.setLayout(layout)
+
+    def get_crop_values(self):
+        return (self.left_spinbox.value(), self.top_spinbox.value(), self.right_spinbox.value(), self.bottom_spinbox.value())
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Image Cropper")
+        self.setGeometry(100, 100, 600, 400)
+
+        self.image_label = QLabel(self)
+        self.setCentralWidget(self.image_label)
+
+        self.load_button = QPushButton("Open Image", self)
+        self.load_button.clicked.connect(self.load_image)
+
+        self.crop_button = QPushButton("Crop Image", self)
+        self.crop_button.clicked.connect(self.crop_image)
+
+        self.statusBar()
+
+        toolbar = self.addToolBar("Main Toolbar")
+        toolbar.addWidget(self.load_button)
+        toolbar.addWidget(self.crop_button)
+
         self.image = None
-        self.img_tk = None
-        self.crop_rectangle = None
-        self.start_x = None
-        self.start_y = None
-        self.end_x = None
-        self.end_y = None
 
-def load_image(canvas):
-    img_path = filedialog.askopenfilename(title="Load Image")
-    if img_path:
-        img = Image.open(img_path)
-        img.thumbnail((600, 600))
-        canvas.data.image = img
-        img_tk = ImageTk.PhotoImage(img)
-        canvas.data.img_tk = img_tk
-        canvas.create_image(0, 0, anchor=NW, image=img_tk)
-        canvas.image = img_tk  # keep a reference
+    def load_image(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
+        if file_path:
+            self.image = Image.open(file_path)
+            pixmap = QPixmap.fromImage(self.convert_pil_to_qimage(self.image))
+            self.image_label.setPixmap(pixmap)
+            self.image_label.resize(pixmap.width(), pixmap.height())
+            self.statusBar().showMessage("Image loaded successfully.")
 
-def start_crop(event, canvas):
-    if canvas.data.image is not None:
-        canvas.data.start_x = event.x
-        canvas.data.start_y = event.y
-        if canvas.data.crop_rectangle:
-            canvas.delete(canvas.data.crop_rectangle)
-        canvas.data.crop_rectangle = canvas.create_rectangle(event.x, event.y, event.x, event.y, outline='red')
-
-def update_crop(event, canvas):
-    if canvas.data.image is not None and canvas.data.crop_rectangle:
-        canvas.coords(canvas.data.crop_rectangle, canvas.data.start_x, canvas.data.start_y, event.x, event.y)
-
-def end_crop(event, canvas):
-    if canvas.data.image is not None and canvas.data.crop_rectangle:
-        canvas.data.end_x = event.x
-        canvas.data.end_y = event.y
-        perform_crop(canvas)
-
-def perform_crop(canvas):
-    if canvas.data.image is not None:
-        start_x, start_y = canvas.data.start_x, canvas.data.start_y
-        end_x, end_y = canvas.data.end_x, canvas.data.end_y
-        if start_x < end_x and start_y < end_y:
-            cropped_image = canvas.data.image.crop((start_x, start_y, end_x, end_y))
-            canvas.data.image = cropped_image
-            img_tk = ImageTk.PhotoImage(cropped_image)
-            canvas.data.img_tk = img_tk
-            canvas.create_image(0, 0, anchor=NW, image=img_tk)
-            canvas.image = img_tk  # keep a reference
-            if canvas.data.crop_rectangle:
-                canvas.delete(canvas.data.crop_rectangle)
-
-def main():
-    root = Tk()
-    root.title("Image Cropping Tool")
-    
-    canvas = Canvas(root, width=600, height=600, bg='white')
-    canvas.pack()
-    
-    canvas.data = CanvasData(root)
-    canvas.bind("<ButtonPress-1>", lambda event: start_crop(event, canvas))
-    canvas.bind("<B1-Motion>", lambda event: update_crop(event, canvas))
-    canvas.bind("<ButtonRelease-1>", lambda event: end_crop(event, canvas))
-    
-    button_frame = Frame(root)
-    button_frame.pack()
-
-    load_button = Button(button_frame, text="Load Image", command=lambda: load_image(canvas))
-    load_button.pack(side=LEFT)
-
-    root.mainloop()
+    def crop_image(self):
+        if self.image:
+            crop_dialog = CropDialog(self)
+            if crop_dialog.exec_():
+                left, top, right, bottom = crop_dialog.get_crop_values()
+                cropped_image = self.image.crop((left, top, self.image.width - right, self.image.height - bottom))
+                pixmap = QPixmap.fromImage(ImageQt.ImageQt(cropped_image))
+                self.image_label.setPixmap(pixmap)
+                self.image_label.resize(pixmap.width(), pixmap.height())
+                self.statusBar().showMessage("Image cropped successfully.")
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
