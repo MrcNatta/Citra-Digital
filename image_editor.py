@@ -10,6 +10,9 @@ import os
 current_brightness = 1.0
 current_contrast = 1.0
 current_scale = 1.0
+rotate_angle = 0
+mirror_applied = False
+translated_img = None
 
 #fungsi mengganti gambar
 
@@ -134,15 +137,46 @@ def reset_image():
     displayimage(img)
     update_image_dimensions(img)
 
-# fungsi menyimpan gambar
+# Function to save the image with all transformations
 def save():
-    global img
-    if img:
-        filename = filedialog.asksaveasfilename(defaultextension=".png", 
-        filetypes=[("PNG files", ".png"), ("JPEG files", ".jpg"), 
-        ("All files", ".")])
-        if filename:
-            img.save(filename)
+    global img, ori_img, current_brightness, current_contrast, current_scale, rotate_angle, mirror_applied, translated_img
+
+    # Create a copy of the original image to apply transformations
+    outputImage = ori_img.copy()
+
+    # Apply scaling
+    width = int(outputImage.width * current_scale)
+    height = int(outputImage.height * current_scale)
+    outputImage = outputImage.resize((width, height))
+
+    # Apply brightness enhancement
+    enhancer = ImageEnhance.Brightness(outputImage)
+    outputImage = enhancer.enhance(current_brightness)
+
+    # Apply contrast enhancement
+    enhancer = ImageEnhance.Contrast(outputImage)
+    outputImage = enhancer.enhance(current_contrast)
+
+    # Apply rotation if angle is not zero
+    if rotate_angle != 0:
+        outputImage = outputImage.rotate(rotate_angle, expand=True)
+
+    # Apply mirror if applied
+    if mirror_applied:
+        outputImage = outputImage.transpose(Image.FLIP_LEFT_RIGHT)
+
+    # Apply translation if applied
+    if translated_img:
+        outputImage.paste(translated_img, (0, 0))
+
+    # Save the final edited image
+    filename = filedialog.asksaveasfilename(defaultextension=".png",
+                                            filetypes=[("PNG files", ".png"), ("JPEG files", ".jpg"),
+                                                       ("All files", ".*")])
+    if filename:
+        outputImage.save(filename)
+
+
 
 # kelas untuk fitur paint
 class Paint(object):
